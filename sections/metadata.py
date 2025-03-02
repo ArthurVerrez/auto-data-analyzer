@@ -6,7 +6,8 @@ def metadata():
     st.set_page_config(
         page_title="Auto Data Analyzer",
         page_icon="⚡",
-        initial_sidebar_state="expanded",
+        initial_sidebar_state="collapsed",
+        layout="wide",
     )
     with open("./static/style.css") as f:
         css = f.read()
