@@ -131,3 +131,83 @@ def get_column_statistics(df):
             }
         col_stats.append(stats)
     return col_stats
+
+
+def bar_chart_data_generator(df: pd.DataFrame, chart_config: dict) -> dict:
+    """Generate parameters for st.bar_chart from a dataframe based on chart configuration.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame.
+        chart_config (dict): Chart configuration containing:
+            - "title": chart title.
+            - "x": column name for x-axis.
+            - "y": column name for y-axis.
+            - "y_agg": one of "distinct_values", "sum", "record_count", "median".
+            - "y_order": optional, one of "asc", "desc", "rand". Defaults to "desc".
+            - "x_order": optional, one of "asc", "desc", "rand".
+            - "y_label": optional, label for y-axis.
+            - "x_label": optional, label for x-axis.
+
+    Returns:
+        dict: Dictionary with key "data" as a DataFrame suitable for st.bar_chart,
+            and optional "x_label" and "y_label" keys.
+    """
+    x_col = chart_config["x"]
+    y_col = chart_config["y"]
+    agg_func = chart_config["y_agg"]
+    y_order = chart_config.get("y_order", "desc")
+    x_order = chart_config.get("x_order", None)
+
+    if agg_func == "distinct_values":
+        agg_series = df.groupby(x_col)[y_col].nunique()
+    elif agg_func == "sum":
+        agg_series = df.groupby(x_col)[y_col].sum()
+    elif agg_func == "record_count":
+        agg_series = df.groupby(x_col).size()
+    elif agg_func == "median":
+        agg_series = df.groupby(x_col)[y_col].median()
+    else:
+        raise ValueError(f"Unsupported aggregation function: {agg_func}")
+
+    agg_df = agg_series.reset_index(name=y_col)
+
+    # Order by aggregated y value first
+    if y_order == "asc":
+        agg_df = agg_df.sort_values(by=y_col, ascending=True)
+    elif y_order == "desc":
+        agg_df = agg_df.sort_values(by=y_col, ascending=False)
+    elif y_order == "rand":
+        agg_df = agg_df.sample(frac=1)
+    else:
+        raise ValueError(f"Unsupported y_order value: {y_order}")
+
+    # Limit to top 10 entries after y_order sorting
+    agg_df = agg_df.head(10)
+
+    # If x_order is provided, re-order the x labels accordingly
+    if x_order:
+        if x_order == "asc":
+            agg_df = agg_df.sort_values(by=x_col, ascending=True)
+        elif x_order == "desc":
+            agg_df = agg_df.sort_values(by=x_col, ascending=False)
+        elif x_order == "rand":
+            agg_df = agg_df.sample(frac=1)
+        else:
+            raise ValueError(f"Unsupported x_order value: {x_order}")
+
+    # Set the index as a categorical index to preserve ordering in Streamlit's bar_chart
+    agg_df.set_index(x_col, inplace=True)
+    agg_df.index = pd.CategoricalIndex(
+        agg_df.index, categories=agg_df.index.tolist(), ordered=True
+    )
+
+    output = {"data": agg_df}
+    if "x_label" in chart_config:
+        output["x_label"] = chart_config["x_label"]
+    else:
+        output["x_label"] = x_col
+    if "y_label" in chart_config:
+        output["y_label"] = chart_config["y_label"]
+    else:
+        output["y_label"] = y_col
+    return output
