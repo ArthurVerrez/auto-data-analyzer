@@ -1,9 +1,7 @@
-bar_chart_suggester:
+bar_chart_suggestion:
   description: >
     Suggest a set of {n_visualizations} interesting and relevant visualizations using bar charts on the following dataset
-     ```
-     {request}
-     ```
+    {data_description_prompt}
 
   expected_output: >
     A JSON output in the format of array of dictionaries:
