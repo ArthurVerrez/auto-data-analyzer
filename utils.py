@@ -1,4 +1,23 @@
 import pandas as pd
+import numpy as np
+
+
+def default_np_converter(obj):
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, np.floating):
+        return float(obj)
+    if isinstance(obj, np.bool_):
+        return bool(obj)
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    return obj
+
+
+def timestamp_converter(obj):
+    if hasattr(obj, "isoformat"):
+        return obj.isoformat()
+    return str(obj)
 
 
 def get_df_from_file(f) -> pd.DataFrame:
@@ -129,6 +148,8 @@ def get_column_statistics(df):
                 "Mode": mode,
                 "Missing Values": num_missing,
             }
+        # Apply the default_np_converter to each value in the dictionary
+        stats = {k: default_np_converter(v) for k, v in stats.items()}
         col_stats.append(stats)
     return col_stats
 

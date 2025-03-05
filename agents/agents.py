@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import sys
 import warnings
+import streamlit as st
+import json
 
 from datetime import datetime
 
@@ -9,6 +11,7 @@ from agents.crew import AnalystCrew
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
 
 
+@st.cache_data
 def run(
     data_description_prompt,
     n_visualizations,

@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
-from utils import get_column_statistics, bar_chart_data_generator
+from utils import get_column_statistics, bar_chart_data_generator, timestamp_converter
 from agents.agents import run
 import os
+import json
 
 MAX_DISTINCT = 10000  # maximum allowed distinct values for charting
 
@@ -35,9 +36,11 @@ def response() -> None:
         # Show as a csv
         st.write(example_rows.to_csv(index=False))
 
+    bar_chart_configs = []
+
     with st.spinner("Running crew..."):
         data_description_prompt = f"""
-        The user has described the data as follows:
+        The user has uploaded the file {st.session_state.uploaded_file.name} and described it as follows:
         ```
         {st.session_state.data_description}
         ```
@@ -50,7 +53,7 @@ def response() -> None:
 
         Here are some advanced insights into the data by columns:
         ```json
-        {str(col_stats)}
+        {json.dumps(col_stats, indent=4, default=timestamp_converter)}
         ```
         """
 
@@ -69,64 +72,18 @@ def response() -> None:
 
     st.divider()
 
-    # chart_configs = [
-    #     {
-    #         "title": "Top 10 Most Frequent Artists",
-    #         "x": "artist_name",
-    #         "y": "spotify_track_uri",
-    #         "y_agg": "distinct_values",
-    #         "y_order": "desc",
-    #         "y_label": "Number of Distinct Tracks",
-    #         "x_label": "Artist Name",
-    #     },
-    #     {
-    #         "title": "Top 10 Most Played Tracks",
-    #         "x": "track_name",
-    #         "y": "ms_played",
-    #         "y_agg": "sum",
-    #         "y_order": "desc",
-    #         "y_label": "Total Play Time (ms)",
-    #         "x_label": "Track Name",
-    #     },
-    #     {
-    #         "title": "Distribution of Listening Platforms",
-    #         "x": "platform",
-    #         "y": "spotify_track_uri",
-    #         "y_agg": "record_count",
-    #         "y_order": "desc",
-    #         "y_label": "Number of Plays",
-    #         "x_label": "Platform",
-    #     },
-    #     {
-    #         "title": "Reason for Track Start",
-    #         "x": "reason_start",
-    #         "y": "spotify_track_uri",
-    #         "y_agg": "record_count",
-    #         "y_order": "desc",
-    #         "y_label": "Number of Plays",
-    #         "x_label": "Start Reason",
-    #     },
-    #     {
-    #         "title": "Skipped vs Non-Skipped Tracks",
-    #         "x": "skipped",
-    #         "y": "spotify_track_uri",
-    #         "y_agg": "record_count",
-    #         "y_order": "desc",
-    #         "y_label": "Number of Plays",
-    #         "x_label": "Skipped",
-    #     },
-    # ]
+    bar_chart_configs = json.loads(response.raw)
 
-    # rows, cols = 3, 3
+    rows, cols = (len(bar_chart_configs) + 2) // 3, 3
 
-    # for row in range(rows):
-    #     columns = st.columns(cols)
-    #     for col_idx, col in enumerate(columns):
-    #         chart_index = row * cols + col_idx
-    #         if chart_index < len(chart_configs):
-    #             chart_config = chart_configs[chart_index]
-    #             with col:
-    #                 st.write(f"### {chart_config['title']}")
-    #                 st.bar_chart(
-    #                     **bar_chart_data_generator(df, chart_config), horizontal=True
-    #                 )
+    for row in range(rows):
+        columns = st.columns(cols)
+        for col_idx, col in enumerate(columns):
+            chart_index = row * cols + col_idx
+            if chart_index < len(bar_chart_configs):
+                chart_config = bar_chart_configs[chart_index]
+                with col:
+                    st.write(f"### {chart_config['title']}")
+                    st.bar_chart(
+                        **bar_chart_data_generator(df, chart_config), horizontal=True
+                    )
