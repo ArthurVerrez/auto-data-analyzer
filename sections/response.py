@@ -1,6 +1,11 @@
 import streamlit as st
 import pandas as pd
-from utils import get_column_statistics, bar_chart_data_generator, timestamp_converter
+from utils import (
+    get_column_statistics,
+    bar_chart_data_generator,
+    timestamp_converter,
+    line_chart_data_generator,
+)
 from agents.agents import run
 import os
 import json
@@ -64,6 +69,7 @@ def response() -> None:
             data_description_prompt=data_description_prompt,
             n_visualizations=5,
             llm_id=st.session_state.llm_id,
+            chart_type="line",
             step_callback=None,
             task_callback=None,
         )
@@ -72,18 +78,32 @@ def response() -> None:
 
     st.divider()
 
-    bar_chart_configs = json.loads(response.raw)
+    # bar_chart_configs = json.loads(response.raw)
 
-    rows, cols = (len(bar_chart_configs) + 2) // 3, 3
+    # rows, cols = (len(bar_chart_configs) + 2) // 3, 3
+
+    # for row in range(rows):
+    #     columns = st.columns(cols)
+    #     for col_idx, col in enumerate(columns):
+    #         chart_index = row * cols + col_idx
+    #         if chart_index < len(bar_chart_configs):
+    #             chart_config = bar_chart_configs[chart_index]
+    #             with col:
+    #                 st.write(f"### {chart_config['title']}")
+    #                 st.bar_chart(
+    #                     **bar_chart_data_generator(df, chart_config), horizontal=True
+    #                 )
+
+    line_chart_configs = json.loads(response.raw)
+
+    rows, cols = (len(line_chart_configs) + 2) // 3, 3
 
     for row in range(rows):
         columns = st.columns(cols)
         for col_idx, col in enumerate(columns):
             chart_index = row * cols + col_idx
-            if chart_index < len(bar_chart_configs):
-                chart_config = bar_chart_configs[chart_index]
+            if chart_index < len(line_chart_configs):
+                chart_config = line_chart_configs[chart_index]
                 with col:
                     st.write(f"### {chart_config['title']}")
-                    st.bar_chart(
-                        **bar_chart_data_generator(df, chart_config), horizontal=True
-                    )
+                    st.line_chart(**line_chart_data_generator(df, chart_config))

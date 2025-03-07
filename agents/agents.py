@@ -16,6 +16,7 @@ def run(
     data_description_prompt,
     n_visualizations,
     llm_id,
+    chart_type,
     step_callback=None,
     task_callback=None,
 ):
@@ -29,7 +30,7 @@ def run(
 
     try:
         return (
-            AnalystCrew(llm_id)
+            AnalystCrew(llm_id, chart_type)
             .crew(step_callback=step_callback, task_callback=task_callback)
             .kickoff(inputs=inputs)
         )

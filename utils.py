@@ -206,7 +206,7 @@ def bar_chart_data_generator(df: pd.DataFrame, chart_config: dict) -> dict:
     agg_df = agg_df.head(10)
 
     # If x_order is provided, re-order the x labels accordingly
-    if x_order:
+    if x_order:  # Remove the False condition to enable x_order sorting
         if x_order == "asc":
             agg_df = agg_df.sort_values(by=x_col, ascending=True)
         elif x_order == "desc":
@@ -231,4 +231,57 @@ def bar_chart_data_generator(df: pd.DataFrame, chart_config: dict) -> dict:
         output["y_label"] = chart_config["y_label"]
     else:
         output["y_label"] = y_col
+    return output
+
+
+def line_chart_data_generator(df: pd.DataFrame, chart_config: dict) -> dict:
+    """Generate parameters for st.line_chart from a dataframe based on chart configuration.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame.
+        chart_config (dict): Chart configuration containing:
+            - "title": chart title.
+            - "x": column name for x-axis.
+            - "y": column name for y-axis.
+            - "y_agg": one of "distinct_values", "sum", "record_count", "median".
+            - "x_order": optional, one of "asc", "desc", "rand". Defaults to "asc".
+            - "x_label": optional, label for x-axis.
+            - "y_label": optional, label for y-axis.
+
+    Returns:
+        dict: Dictionary with key "data" as a DataFrame suitable for st.line_chart,
+              and optional "x_label" and "y_label" keys.
+    """
+    x_col = chart_config["x"]
+    y_col = chart_config["y"]
+    agg_func = chart_config["y_agg"]
+    x_order = chart_config.get("x_order", "asc")
+
+    if agg_func == "distinct_values":
+        agg_series = df.groupby(x_col)[y_col].nunique()
+    elif agg_func == "sum":
+        agg_series = df.groupby(x_col)[y_col].sum()
+    elif agg_func == "record_count":
+        agg_series = df.groupby(x_col).size()
+    elif agg_func == "median":
+        agg_series = df.groupby(x_col)[y_col].median()
+    else:
+        raise ValueError(f"Unsupported aggregation function: {agg_func}")
+
+    agg_df = agg_series.reset_index(name=y_col)
+
+    if x_order == "asc":
+        agg_df = agg_df.sort_values(by=x_col, ascending=True)
+    elif x_order == "desc":
+        agg_df = agg_df.sort_values(by=x_col, ascending=False)
+    elif x_order == "rand":
+        agg_df = agg_df.sample(frac=1)
+    else:
+        raise ValueError(f"Unsupported x_order value: {x_order}")
+
+    agg_df.set_index(x_col, inplace=True)
+
+    output = {"data": agg_df}
+    output["x_label"] = chart_config.get("x_label", x_col)
+    output["y_label"] = chart_config.get("y_label", y_col)
     return output

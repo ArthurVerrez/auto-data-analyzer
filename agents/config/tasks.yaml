@@ -23,3 +23,29 @@ bar_chart_suggestion:
     ]
     ```
   agent: analyzer
+
+line_chart_suggestion:
+  description: >
+    Suggest a set of {n_visualizations} interesting and relevant visualizations using line charts on the following dataset
+    {data_description_prompt}
+
+  expected_output: >
+    A JSON output in the format of array of dictionaries:
+    ```json
+    [
+      {
+            "title": relevant_title,
+            "x": col_name,
+            "y": col_name,
+            "y_agg": "distinct_values"|"sum"|"record_count"|"median",
+            "x_order": desc|asc|rand (ONLY IF y_order IS UNSET, OPTIONAL),
+            "y_order": desc|asc|rand (ONLY IF y_order IS UNSET, OPTIONAL),
+            "y_label": human_readable_label (OPTIONAL),
+            "x_label": human_readable_label (OPTIONAL)
+        },
+      {
+        ...
+      }
+    ]
+    ```
+  agent: analyzer
