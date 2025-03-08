@@ -1,6 +1,8 @@
 bar_chart_suggestion:
   description: >
-    Suggest a set of {n_visualizations} interesting and relevant visualizations using bar charts on the following dataset
+    Suggest a set of {n_visualizations} interesting and relevant visualizations using bar charts on the following dataset.
+    (The maximum number of elements that will be shown is {max_points_bar_chart}).
+
     {data_description_prompt}
 
   expected_output: >
@@ -12,8 +14,8 @@ bar_chart_suggestion:
             "x": col_name,
             "y": col_name,
             "y_agg": "distinct_values"|"sum"|"record_count"|"median",
-            "x_order": desc|asc|rand (ONLY IF y_order IS UNSET, OPTIONAL),
-            "y_order": desc|asc|rand (ONLY IF y_order IS UNSET, OPTIONAL),
+            "y_order": desc|asc|rand (ONLY IF x_order IS UNSET, OPTIONAL),
+            "x_order": desc|asc|rand (ONLY IF y_order IS UNSET, only use if more relevant, OPTIONAL),
             "y_label": human_readable_label (OPTIONAL),
             "x_label": human_readable_label (OPTIONAL)
         },
@@ -26,7 +28,9 @@ bar_chart_suggestion:
 
 line_chart_suggestion:
   description: >
-    Suggest a set of {n_visualizations} interesting and relevant visualizations using line charts on the following dataset
+    Suggest a set of {n_visualizations} interesting and relevant visualizations using line charts on the following dataset.
+    (The maximum number of elements that will be shown is {max_points_line_chart}).
+
     {data_description_prompt}
 
   expected_output: >
@@ -38,10 +42,11 @@ line_chart_suggestion:
             "x": col_name,
             "y": col_name,
             "y_agg": "distinct_values"|"sum"|"record_count"|"median",
-            "x_order": desc|asc|rand (ONLY IF y_order IS UNSET, OPTIONAL),
-            "y_order": desc|asc|rand (ONLY IF y_order IS UNSET, OPTIONAL),
+            "y_order": desc|asc|rand (ONLY IF x_order IS UNSET, OPTIONAL),
+            "x_order": desc|asc|rand (ONLY IF y_order IS UNSET, only use if more relevant, OPTIONAL),
             "y_label": human_readable_label (OPTIONAL),
-            "x_label": human_readable_label (OPTIONAL)
+            "x_label": human_readable_label (OPTIONAL),
+            "x_time_trunc: s|min|hour|day|week|month|year (ONLY IF time/date-like type, OPTIONAL)
         },
       {
         ...

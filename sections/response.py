@@ -9,6 +9,8 @@ from utils import (
 from agents.agents import run
 import os
 import json
+import plotly.express as px
+
 
 MAX_DISTINCT = 10000  # maximum allowed distinct values for charting
 
@@ -27,7 +29,7 @@ def response() -> None:
 
     df = st.session_state.df
     col_stats = get_column_statistics(df)
-    example_rows = df.sample(n=min(5, len(df)))
+    example_rows = df.sample(n=min(5, len(df)), random_state=42)
 
     st.divider()
 
@@ -69,7 +71,6 @@ def response() -> None:
             data_description_prompt=data_description_prompt,
             n_visualizations=5,
             llm_id=st.session_state.llm_id,
-            chart_type="line",
             step_callback=None,
             task_callback=None,
         )
@@ -78,32 +79,55 @@ def response() -> None:
 
     st.divider()
 
-    # bar_chart_configs = json.loads(response.raw)
+    bar_chart_suggestions = []
+    line_chart_suggestions = []
 
-    # rows, cols = (len(bar_chart_configs) + 2) // 3, 3
+    for task_output in response.tasks_output:
+        if task_output.name == "bar_chart_suggestion_task":
+            bar_chart_suggestions = json.loads(task_output.raw)
+        elif task_output.name == "line_chart_suggestion_task":
+            line_chart_suggestions = json.loads(task_output.raw)
 
-    # for row in range(rows):
-    #     columns = st.columns(cols)
-    #     for col_idx, col in enumerate(columns):
-    #         chart_index = row * cols + col_idx
-    #         if chart_index < len(bar_chart_configs):
-    #             chart_config = bar_chart_configs[chart_index]
-    #             with col:
-    #                 st.write(f"### {chart_config['title']}")
-    #                 st.bar_chart(
-    #                     **bar_chart_data_generator(df, chart_config), horizontal=True
-    #                 )
+    with st.expander("Bar Chart Suggestions", expanded=False):
+        st.write(bar_chart_suggestions)
 
-    line_chart_configs = json.loads(response.raw)
+    with st.expander("Line Chart Suggestions", expanded=False):
+        st.write(line_chart_suggestions)
 
-    rows, cols = (len(line_chart_configs) + 2) // 3, 3
+    rows, cols = (len(bar_chart_suggestions) + 2) // 3, 3
 
     for row in range(rows):
         columns = st.columns(cols)
         for col_idx, col in enumerate(columns):
             chart_index = row * cols + col_idx
-            if chart_index < len(line_chart_configs):
-                chart_config = line_chart_configs[chart_index]
+            if chart_index < len(bar_chart_suggestions):
+                chart_config = bar_chart_suggestions[chart_index]
                 with col:
-                    st.write(f"### {chart_config['title']}")
-                    st.line_chart(**line_chart_data_generator(df, chart_config))
+                    try:
+                        st.write(f"### {chart_config['title']}")
+                        st.plotly_chart(
+                            px.bar(**bar_chart_data_generator(df, chart_config))
+                        )
+                    except Exception as e:
+                        st.write(
+                            f"Error: {e} occurred while rendering the chart. Please try another chart suggestion."
+                        )
+
+    rows, cols = (len(line_chart_suggestions) + 2) // 3, 3
+
+    for row in range(rows):
+        columns = st.columns(cols)
+        for col_idx, col in enumerate(columns):
+            chart_index = row * cols + col_idx
+            if chart_index < len(line_chart_suggestions):
+                chart_config = line_chart_suggestions[chart_index]
+                with col:
+                    try:
+                        st.write(f"### {chart_config['title']}")
+                        st.plotly_chart(
+                            px.line(**line_chart_data_generator(df, chart_config))
+                        )
+                    except Exception as e:
+                        st.write(
+                            f"Error: {e} occurred while rendering the chart. Please try another chart suggestion."
+                        )

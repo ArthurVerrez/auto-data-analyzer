@@ -1,10 +1,8 @@
 #!/usr/bin/env python
-import sys
 import warnings
 import streamlit as st
-import json
 
-from datetime import datetime
+from constants import MAX_POINTS_BAR_CHART, MAX_POINTS_LINE_CHART
 
 from agents.crew import AnalystCrew
 
@@ -16,7 +14,6 @@ def run(
     data_description_prompt,
     n_visualizations,
     llm_id,
-    chart_type,
     step_callback=None,
     task_callback=None,
 ):
@@ -26,11 +23,13 @@ def run(
     inputs = {
         "data_description_prompt": data_description_prompt,
         "n_visualizations": n_visualizations,
+        "max_points_bar_chart": MAX_POINTS_BAR_CHART,
+        "max_points_line_chart": MAX_POINTS_LINE_CHART,
     }
 
     try:
         return (
-            AnalystCrew(llm_id, chart_type)
+            AnalystCrew(llm_id)
             .crew(step_callback=step_callback, task_callback=task_callback)
             .kickoff(inputs=inputs)
         )

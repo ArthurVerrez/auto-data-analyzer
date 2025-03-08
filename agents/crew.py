@@ -1,3 +1,4 @@
+from calendar import week
 import time
 import os
 from crewai import Agent, Crew, Process, Task, LLM
@@ -21,6 +22,16 @@ class OrderEnum(str, Enum):
     rand = "rand"
 
 
+class TimeTruncEnum(str, Enum):
+    year = "year"
+    month = "month"
+    week = "week"
+    day = "day"
+    hour = "hour"
+    minute = "min"
+    second = "s"
+
+
 class BarChartSpec(BaseModel):
     title: str
     x: str
@@ -37,18 +48,18 @@ class LineChartSpec(BaseModel):
     x: str
     y: str
     y_agg: YAggEnum
-    x_order: Optional[OrderEnum] = OrderEnum.asc
+    x_order: Optional[OrderEnum] = None
     x_label: Optional[str] = None
     y_label: Optional[str] = None
+    x_time_trunc: Optional[TimeTruncEnum] = None
 
 
 @CrewBase
 class AnalystCrew:
-    def __init__(self, llm_id, chart_type) -> None:
+    def __init__(self, llm_id) -> None:
         self.llm = LLM(model=llm_id)
         self.agents_config = "config/agents.yaml"
         self.tasks_config = "config/tasks.yaml"
-        self.chart_type = chart_type
 
     @agent
     def analyzer(self) -> Agent:
@@ -63,18 +74,14 @@ class AnalystCrew:
             verbose=True,
         )
 
-    # @task
-    # def bar_chart_suggestion_task(self) -> Task:
-    #     if self.chart_type != "bar":
-    #         return None
-    #     return Task(
-    #         config=self.tasks_config["bar_chart_suggestion"], output_json=BarChartSpec
-    #     )
+    @task
+    def bar_chart_suggestion_task(self) -> Task:
+        return Task(
+            config=self.tasks_config["bar_chart_suggestion"], output_json=BarChartSpec
+        )
 
     @task
     def line_chart_suggestion_task(self) -> Task:
-        if self.chart_type != "line":
-            return
         return Task(
             config=self.tasks_config["line_chart_suggestion"], output_json=LineChartSpec
         )

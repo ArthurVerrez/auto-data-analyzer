@@ -1,6 +1,12 @@
 import pandas as pd
 import numpy as np
 
+from constants import (
+    MAX_POINTS_BAR_CHART,
+    MAX_POINTS_LINE_CHART,
+    MAX_STRING_LABEL_LENGTH,
+)
+
 
 def default_np_converter(obj):
     if isinstance(obj, np.integer):
@@ -124,7 +130,6 @@ def get_column_statistics(df):
                 "False count": false_count,
                 "Missing Values": num_missing,
             }
-        # If string, add the average, min, max, median length of the strings
         elif pd.api.types.is_string_dtype(df[col]):
             stats = {
                 "Name": col,
@@ -139,7 +144,6 @@ def get_column_statistics(df):
                 "Missing Values": num_missing,
             }
         else:
-
             stats = {
                 "Name": col,
                 "Type": value_type,
@@ -148,30 +152,37 @@ def get_column_statistics(df):
                 "Mode": mode,
                 "Missing Values": num_missing,
             }
-        # Apply the default_np_converter to each value in the dictionary
         stats = {k: default_np_converter(v) for k, v in stats.items()}
         col_stats.append(stats)
     return col_stats
 
 
 def bar_chart_data_generator(df: pd.DataFrame, chart_config: dict) -> dict:
-    """Generate parameters for st.bar_chart from a dataframe based on chart configuration.
+    """Generate parameters for a horizontal bar chart with Plotly.
+
+    Aggregates data based on the provided configuration and returns a dictionary
+    with parameters to be unpacked into px.bar().
 
     Args:
         df (pd.DataFrame): Input DataFrame.
         chart_config (dict): Chart configuration containing:
-            - "title": chart title.
-            - "x": column name for x-axis.
-            - "y": column name for y-axis.
-            - "y_agg": one of "distinct_values", "sum", "record_count", "median".
-            - "y_order": optional, one of "asc", "desc", "rand". Defaults to "desc".
-            - "x_order": optional, one of "asc", "desc", "rand".
-            - "y_label": optional, label for y-axis.
-            - "x_label": optional, label for x-axis.
+            - x (str): Column name for categorical data.
+            - y (str): Column name for numerical data.
+            - y_agg (str): Aggregation function ("distinct_values", "sum", "record_count", "median").
+            - y_order (str, optional): Order for the y axis ("asc", "desc", "rand"). Defaults to "desc".
+            - x_order (str, optional): Secondary order for the x axis ("asc", "desc", "rand").
+            - title (str, optional): Chart title.
+            - x_label (str, optional): Label for the categorical axis.
+            - y_label (str, optional): Label for the numerical axis.
 
     Returns:
-        dict: Dictionary with key "data" as a DataFrame suitable for st.bar_chart,
-            and optional "x_label" and "y_label" keys.
+        dict: Dictionary with keys:
+            - data_frame (pd.DataFrame): Aggregated DataFrame.
+            - x (str): Column for x-axis (numeric value).
+            - y (str): Column for y-axis (categorical value).
+            - title (str): Chart title.
+            - labels (dict): Mapping of axis names to labels.
+            - orientation (str): Chart orientation ("h").
     """
     x_col = chart_config["x"]
     y_col = chart_config["y"]
@@ -192,7 +203,6 @@ def bar_chart_data_generator(df: pd.DataFrame, chart_config: dict) -> dict:
 
     agg_df = agg_series.reset_index(name=y_col)
 
-    # Order by aggregated y value first
     if y_order == "asc":
         agg_df = agg_df.sort_values(by=y_col, ascending=True)
     elif y_order == "desc":
@@ -202,40 +212,52 @@ def bar_chart_data_generator(df: pd.DataFrame, chart_config: dict) -> dict:
     else:
         raise ValueError(f"Unsupported y_order value: {y_order}")
 
-    # Limit to top 10 entries after y_order sorting
-    agg_df = agg_df.head(10)
-
-    # If x_order is provided, re-order the x labels accordingly
-    if x_order:  # Remove the False condition to enable x_order sorting
+    if x_order and x_order != "rand":
         if x_order == "asc":
-            agg_df = agg_df.sort_values(by=x_col, ascending=True)
+            agg_df = agg_df.sort_values(
+                by=[y_col, x_col], ascending=[y_order == "asc", True]
+            )
         elif x_order == "desc":
-            agg_df = agg_df.sort_values(by=x_col, ascending=False)
-        elif x_order == "rand":
-            agg_df = agg_df.sample(frac=1)
+            agg_df = agg_df.sort_values(
+                by=[y_col, x_col], ascending=[y_order == "asc", False]
+            )
         else:
             raise ValueError(f"Unsupported x_order value: {x_order}")
 
-    # Set the index as a categorical index to preserve ordering in Streamlit's bar_chart
-    agg_df.set_index(x_col, inplace=True)
-    agg_df.index = pd.CategoricalIndex(
-        agg_df.index, categories=agg_df.index.tolist(), ordered=True
+    agg_df = agg_df.head(MAX_POINTS_BAR_CHART)
+
+    # Truncate long string labels to MAX_STRING_LABEL_LENGTH
+    if pd.api.types.is_string_dtype(agg_df[x_col]):
+        agg_df[x_col] = agg_df[x_col].apply(
+            lambda x: (
+                x[:MAX_STRING_LABEL_LENGTH] + "..."
+                if len(x) > MAX_STRING_LABEL_LENGTH
+                else x
+            )
+        )
+
+    agg_df[x_col] = pd.Categorical(
+        agg_df[x_col], categories=agg_df[x_col].tolist(), ordered=True
     )
 
-    output = {"data": agg_df}
-    if "x_label" in chart_config:
-        output["x_label"] = chart_config["x_label"]
-    else:
-        output["x_label"] = x_col
-    if "y_label" in chart_config:
-        output["y_label"] = chart_config["y_label"]
-    else:
-        output["y_label"] = y_col
-    return output
+    return {
+        "data_frame": agg_df,
+        "x": y_col,  # Numeric value for horizontal bar length
+        "y": x_col,  # Categorical value for bar labels
+        "title": chart_config.get("title", ""),
+        "labels": {
+            y_col: chart_config.get("y_label", y_col),
+            x_col: chart_config.get("x_label", x_col),
+        },
+        "orientation": "h",
+    }
 
 
 def line_chart_data_generator(df: pd.DataFrame, chart_config: dict) -> dict:
-    """Generate parameters for st.line_chart from a dataframe based on chart configuration.
+    """Generate parameters for a Plotly line chart from a dataframe based on chart configuration.
+
+    Aggregates data based on the provided configuration and returns a dictionary
+    with keys for use with px.line().
 
     Args:
         df (pd.DataFrame): Input DataFrame.
@@ -245,43 +267,118 @@ def line_chart_data_generator(df: pd.DataFrame, chart_config: dict) -> dict:
             - "y": column name for y-axis.
             - "y_agg": one of "distinct_values", "sum", "record_count", "median".
             - "x_order": optional, one of "asc", "desc", "rand". Defaults to "asc".
+            - "y_order": optional, one of "asc", "desc", "rand". If provided, ordering is applied on the y value.
             - "x_label": optional, label for x-axis.
             - "y_label": optional, label for y-axis.
+            - "x_time_trunc": optional, one of "s", "min", "hour", "day", "week", "month", "year".
+              Applied only if the x column is a time or datelike type.
 
     Returns:
-        dict: Dictionary with key "data" as a DataFrame suitable for st.line_chart,
-              and optional "x_label" and "y_label" keys.
+        dict: Dictionary with keys:
+            - data_frame (pd.DataFrame): Aggregated DataFrame.
+            - x (str): Column for x-axis.
+            - y (str): Column for y-axis.
+            - title (str): Chart title.
+            - labels (dict): Mapping of axis names to labels.
     """
     x_col = chart_config["x"]
     y_col = chart_config["y"]
     agg_func = chart_config["y_agg"]
     x_order = chart_config.get("x_order", "asc")
+    y_order = chart_config.get("y_order", None)
+
+    if "x_time_trunc" in chart_config and pd.api.types.is_datetime64_any_dtype(
+        df[x_col]
+    ):
+        mapping = {
+            "s": "S",
+            "min": "T",
+            "hour": "H",
+            "day": "D",
+            "week": "W",
+            "month": "M",
+            "year": "Y",
+        }
+        trunc_value = chart_config["x_time_trunc"].lower()
+        if trunc_value in mapping:
+            freq = mapping[trunc_value]
+            if trunc_value == "month":
+                group_key = df[x_col].dt.to_period("M").dt.to_timestamp()
+            elif trunc_value == "year":
+                group_key = df[x_col].dt.to_period("Y").dt.to_timestamp()
+            elif trunc_value == "week":
+                group_key = df[x_col].dt.to_period("W").dt.to_timestamp()
+            else:
+                group_key = df[x_col].dt.floor(freq)
+        else:
+            group_key = df[x_col]
+    else:
+        group_key = df[x_col]
 
     if agg_func == "distinct_values":
-        agg_series = df.groupby(x_col)[y_col].nunique()
+        agg_series = df.groupby(group_key)[y_col].nunique()
     elif agg_func == "sum":
-        agg_series = df.groupby(x_col)[y_col].sum()
+        agg_series = df.groupby(group_key)[y_col].sum()
     elif agg_func == "record_count":
-        agg_series = df.groupby(x_col).size()
+        agg_series = df.groupby(group_key).size()
     elif agg_func == "median":
-        agg_series = df.groupby(x_col)[y_col].median()
+        agg_series = df.groupby(group_key)[y_col].median()
     else:
         raise ValueError(f"Unsupported aggregation function: {agg_func}")
 
     agg_df = agg_series.reset_index(name=y_col)
 
-    if x_order == "asc":
-        agg_df = agg_df.sort_values(by=x_col, ascending=True)
-    elif x_order == "desc":
-        agg_df = agg_df.sort_values(by=x_col, ascending=False)
-    elif x_order == "rand":
-        agg_df = agg_df.sample(frac=1)
+    # Apply ordering: if y_order is specified, sort by y value first, then by x if provided.
+    if y_order is not None:
+        if y_order == "asc":
+            agg_df = agg_df.sort_values(by=y_col, ascending=True)
+        elif y_order == "desc":
+            agg_df = agg_df.sort_values(by=y_col, ascending=False)
+        elif y_order == "rand":
+            agg_df = agg_df.sample(frac=1)
+        else:
+            raise ValueError(f"Unsupported y_order value: {y_order}")
+
+        if x_order and x_order != "rand":
+            if x_order == "asc":
+                agg_df = agg_df.sort_values(
+                    by=[y_col, x_col], ascending=[y_order == "asc", True]
+                )
+            elif x_order == "desc":
+                agg_df = agg_df.sort_values(
+                    by=[y_col, x_col], ascending=[y_order == "asc", False]
+                )
+            else:
+                raise ValueError(f"Unsupported x_order value: {x_order}")
     else:
-        raise ValueError(f"Unsupported x_order value: {x_order}")
+        # Fallback to x_order if no y_order is specified.
+        if x_order == "asc":
+            agg_df = agg_df.sort_values(by=x_col, ascending=True)
+        elif x_order == "desc":
+            agg_df = agg_df.sort_values(by=x_col, ascending=False)
+        elif x_order == "rand":
+            agg_df = agg_df.sample(frac=1)
+        else:
+            raise ValueError(f"Unsupported x_order value: {x_order}")
 
-    agg_df.set_index(x_col, inplace=True)
+    agg_df = agg_df.head(MAX_POINTS_LINE_CHART)
 
-    output = {"data": agg_df}
-    output["x_label"] = chart_config.get("x_label", x_col)
-    output["y_label"] = chart_config.get("y_label", y_col)
-    return output
+    if pd.api.types.is_string_dtype(agg_df[x_col]):
+        agg_df[x_col] = agg_df[x_col].apply(
+            lambda x: (
+                x[:MAX_STRING_LABEL_LENGTH] + "..."
+                if len(x) > MAX_STRING_LABEL_LENGTH
+                else x
+            )
+        )
+
+    return {
+        "data_frame": agg_df,
+        "x": x_col,
+        "y": y_col,
+        "title": chart_config.get("title", ""),
+        "labels": {
+            x_col: chart_config.get("x_label", x_col),
+            y_col: chart_config.get("y_label", y_col),
+        },
+    }

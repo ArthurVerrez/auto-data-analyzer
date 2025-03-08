@@ -13,4 +13,7 @@ def metadata():
         css = f.read()
         st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
-    st.session_state.update(DEFAULT_SESSION_STATE)
+    # Initialize default session state values
+    for key, value in DEFAULT_SESSION_STATE.items():
+        if key not in st.session_state:
+            st.session_state[key] = value

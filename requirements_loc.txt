@@ -4,3 +4,5 @@ streamlit==1.42.2
 python-dotenv==1.0.1
 pandas==2.2.3
 numpy==2.2.3
+orjson==3.10.15
+plotly==6.0.0
