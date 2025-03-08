@@ -1,3 +1,11 @@
+# The next 3 lines are here for compatibility with the Streamlit Cloud platform
+import sys
+import os
+
+if sys.platform.startswith("linux"):
+    __import__("pysqlite3")
+    sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
+
 from dotenv import load_dotenv
 
 load_dotenv()
