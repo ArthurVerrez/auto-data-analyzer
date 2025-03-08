@@ -40,7 +40,7 @@ env\Scripts\activate
 pip install -r requirements_loc.txt
 ```
 
-> Note: `requirements.txt` is actually reserved for Streamlit, due to some incompatibilities of the `crewai` library.
+> Note: `requirements.txt` is actually reserved for Streamlit Community Cloud, due to some incompatibilities of the `crewai` library.
 
 ## Usage
 
