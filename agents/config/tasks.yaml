@@ -1,6 +1,6 @@
 bar_chart_suggestion:
   description: >
-    Suggest a set of {n_visualizations} interesting and relevant visualizations using bar charts on the following dataset.
+    Suggest a set of {n_bar_chart_visualizations} interesting and relevant visualizations using bar charts on the following dataset.
     (The maximum number of elements that will be shown is {max_points_bar_chart}).
 
     {data_description_prompt}
@@ -28,7 +28,7 @@ bar_chart_suggestion:
 
 line_chart_suggestion:
   description: >
-    Suggest a set of {n_visualizations} interesting and relevant visualizations using line charts on the following dataset.
+    Suggest a set of {n_line_chart_visualizations} interesting and relevant visualizations using line charts on the following dataset.
     (The maximum number of elements that will be shown is {max_points_line_chart}).
 
     {data_description_prompt}

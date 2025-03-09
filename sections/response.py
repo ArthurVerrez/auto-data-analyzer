@@ -6,7 +6,7 @@ from utils import (
     timestamp_converter,
     line_chart_data_generator,
 )
-from agents.agents import run
+from agents.agents import get_chart_suggestions
 import os
 import json
 import plotly.express as px
@@ -43,50 +43,38 @@ def response() -> None:
         # Show as a csv
         st.write(example_rows.to_csv(index=False))
 
-    bar_chart_configs = []
+    data_description_prompt = f"""
+    The user has uploaded the file {st.session_state.uploaded_file.name} and described it as follows:
+    ```
+    {st.session_state.data_description}
+    ```
 
-    with st.spinner("Running crew..."):
-        data_description_prompt = f"""
-        The user has uploaded the file {st.session_state.uploaded_file.name} and described it as follows:
-        ```
-        {st.session_state.data_description}
-        ```
-
-        Here are a few randomly chosen examples of the data:
-        ```
-        {example_rows.to_csv(index=False)}
-        ```
+    Here are a few randomly chosen examples of the data:
+    ```
+    {example_rows.to_csv(index=False)}
+    ```
 
 
-        Here are some advanced insights into the data by columns:
-        ```json
-        {json.dumps(col_stats, indent=4, default=timestamp_converter)}
-        ```
-        """
+    Here are some advanced insights into the data by columns:
+    ```json
+    {json.dumps(col_stats, indent=4, default=timestamp_converter)}
+    ```
+    """
 
-        with st.expander("Data Description Prompt", expanded=False):
-            st.write(data_description_prompt)
-
-        response = run(
-            data_description_prompt=data_description_prompt,
-            n_visualizations=5,
-            llm_id=st.session_state.llm_id,
-            step_callback=None,
-            task_callback=None,
-        )
-        with st.expander("Response", expanded=False):
-            st.write(response)
+    with st.expander("Data Description Prompt", expanded=False):
+        st.write(data_description_prompt)
 
     st.divider()
 
-    bar_chart_suggestions = []
-    line_chart_suggestions = []
-
-    for task_output in response.tasks_output:
-        if task_output.name == "bar_chart_suggestion_task":
-            bar_chart_suggestions = json.loads(task_output.raw)
-        elif task_output.name == "line_chart_suggestion_task":
-            line_chart_suggestions = json.loads(task_output.raw)
+    with st.spinner("Getting chart suggestions..."):
+        chart_suggestions = get_chart_suggestions(
+            data_description_prompt=data_description_prompt,
+            n_bar_chart_visualizations=5,
+            n_line_chart_visualizations=5,
+            llm_id=st.session_state.llm_id,
+        )
+        bar_chart_suggestions = chart_suggestions.get("bar_charts", [])
+        line_chart_suggestions = chart_suggestions.get("line_charts", [])
 
     with st.expander("Bar Chart Suggestions", expanded=False):
         st.write(bar_chart_suggestions)
