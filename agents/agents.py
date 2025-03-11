@@ -2,7 +2,7 @@
 import warnings
 import streamlit as st
 
-from constants import MAX_POINTS_BAR_CHART, MAX_POINTS_LINE_CHART
+from constants import MAX_POINTS_BAR_CHART, MAX_POINTS_LINE_CHART, MAX_BINS_HISTOGRAM
 
 from agents.crew import AnalystCrew
 import json
@@ -15,6 +15,7 @@ def run(
     data_description_prompt,
     n_bar_chart_visualizations,
     n_line_chart_visualizations,
+    n_histogram_visualizations,
     llm_id,
     step_callback=None,
     task_callback=None,
@@ -26,8 +27,10 @@ def run(
         "data_description_prompt": data_description_prompt,
         "n_bar_chart_visualizations": n_bar_chart_visualizations,
         "n_line_chart_visualizations": n_line_chart_visualizations,
+        "n_histogram_visualizations": n_histogram_visualizations,
         "max_points_bar_chart": MAX_POINTS_BAR_CHART,
         "max_points_line_chart": MAX_POINTS_LINE_CHART,
+        "max_bins_histogram": MAX_BINS_HISTOGRAM,
     }
 
     try:
@@ -44,26 +47,32 @@ def get_chart_suggestions(
     data_description_prompt,
     n_bar_chart_visualizations,
     n_line_chart_visualizations,
+    n_histogram_visualizations,
     llm_id,
 ):
     response = run(
         data_description_prompt=data_description_prompt,
         n_bar_chart_visualizations=n_bar_chart_visualizations,
         n_line_chart_visualizations=n_line_chart_visualizations,
+        n_histogram_visualizations=n_histogram_visualizations,
         llm_id=llm_id,
         step_callback=None,
         task_callback=None,
     )
     bar_chart_suggestions = []
     line_chart_suggestions = []
+    histogram_suggestions = []
 
     for task_output in response.tasks_output:
         if task_output.name == "bar_chart_suggestion_task":
             bar_chart_suggestions = json.loads(task_output.raw)
         elif task_output.name == "line_chart_suggestion_task":
             line_chart_suggestions = json.loads(task_output.raw)
+        elif task_output.name == "histogram_suggestion_task":
+            histogram_suggestions = json.loads(task_output.raw)
 
     return {
         "bar_charts": bar_chart_suggestions,
         "line_charts": line_chart_suggestions,
+        "histograms": histogram_suggestions,
     }

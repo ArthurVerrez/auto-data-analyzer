@@ -54,3 +54,30 @@ line_chart_suggestion:
     ]
     ```
   agent: analyzer
+
+histogram_suggestion:
+  description: >
+    Suggest a set of {n_histogram_visualizations} interesting and relevant visualizations using histograms on the following dataset.
+    (The maximum number of bins that will be shown is {max_bins_histogram}).
+
+    {data_description_prompt}
+
+  expected_output: >
+    A JSON output in the format of array of dictionaries:
+
+    ```json
+    [
+      {
+            "title": relevant_title,
+            "x": col_name,
+            "bins": bin_count,
+            "x_label": human_readable_label (OPTIONAL),
+            "y_label": human_readable_label (OPTIONAL),
+            "y_agg": "record_count" (OPTIONAL)
+      },
+      {
+            ...
+      }
+    ]```
+
+  agent: analyzer

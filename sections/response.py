@@ -1,3 +1,4 @@
+from numpy import histogram
 import streamlit as st
 import pandas as pd
 from utils import (
@@ -5,6 +6,7 @@ from utils import (
     bar_chart_data_generator,
     timestamp_converter,
     line_chart_data_generator,
+    histogram_data_generator,
 )
 from agents.agents import get_chart_suggestions
 import os
@@ -71,16 +73,21 @@ def response() -> None:
             data_description_prompt=data_description_prompt,
             n_bar_chart_visualizations=5,
             n_line_chart_visualizations=5,
+            n_histogram_visualizations=5,
             llm_id=st.session_state.llm_id,
         )
         bar_chart_suggestions = chart_suggestions.get("bar_charts", [])
         line_chart_suggestions = chart_suggestions.get("line_charts", [])
+        histogram_suggestions = chart_suggestions.get("histograms", [])
 
     with st.expander("Bar Chart Suggestions", expanded=False):
         st.write(bar_chart_suggestions)
 
     with st.expander("Line Chart Suggestions", expanded=False):
         st.write(line_chart_suggestions)
+
+    with st.expander("Histogram Suggestions", expanded=False):
+        st.write(histogram_suggestions)
 
     rows, cols = (len(bar_chart_suggestions) + 2) // 3, 3
 
@@ -114,6 +121,25 @@ def response() -> None:
                         st.write(f"### {chart_config['title']}")
                         st.plotly_chart(
                             px.line(**line_chart_data_generator(df, chart_config))
+                        )
+                    except Exception as e:
+                        st.write(
+                            f"Error: {e} occurred while rendering the chart. Please try another chart suggestion."
+                        )
+
+    rows, cols = (len(histogram_suggestions) + 2) // 3, 3
+
+    for row in range(rows):
+        columns = st.columns(cols)
+        for col_idx, col in enumerate(columns):
+            chart_index = row * cols + col_idx
+            if chart_index < len(histogram_suggestions):
+                chart_config = histogram_suggestions[chart_index]
+                with col:
+                    try:
+                        st.write(f"### {chart_config['title']}")
+                        st.plotly_chart(
+                            px.histogram(**histogram_data_generator(df, chart_config))
                         )
                     except Exception as e:
                         st.write(

@@ -5,6 +5,7 @@ from constants import (
     MAX_POINTS_BAR_CHART,
     MAX_POINTS_LINE_CHART,
     MAX_STRING_LABEL_LENGTH,
+    MAX_BINS_HISTOGRAM,
 )
 
 
@@ -382,3 +383,70 @@ def line_chart_data_generator(df: pd.DataFrame, chart_config: dict) -> dict:
             y_col: chart_config.get("y_label", y_col),
         },
     }
+
+
+def histogram_data_generator(df: pd.DataFrame, histogram_config: dict) -> dict:
+    """
+    Generate configuration for a histogram visualization using Plotly Express.
+
+    Args:
+        df (pd.DataFrame): DataFrame to visualize.
+        histogram_config (dict): Dictionary containing histogram configuration.
+            Expected keys:
+                - "x": Column name for the x-axis.
+                - "bins": Number of bins for the histogram.
+                - "title": (Optional) Chart title.
+                - "x_label": (Optional) Human-readable label for the x-axis.
+                - "y_label": (Optional) Human-readable label for the y-axis.
+
+    Returns:
+        dict: Dictionary of configuration parameters for px.histogram.
+    """
+    config = {
+        "data_frame": df,
+        "x": histogram_config.get("x"),
+        "nbins": histogram_config.get("bins"),
+        "title": histogram_config.get("title"),
+    }
+    labels = {}
+    if "x_label" in histogram_config:
+        labels[histogram_config["x"]] = histogram_config["x_label"]
+    if "y_label" in histogram_config:
+        labels["count"] = histogram_config["y_label"]
+    if labels:
+        config["labels"] = labels
+    return config
+
+
+def display_grid_streamlit(
+    chart_suggestions, df, chart_type, chart_data_generator, px_chart_function
+):
+    """Display a grid of charts in Streamlit.
+
+    Args:
+        chart_suggestions: List of chart configurations
+        df: DataFrame containing the data
+        chart_type: Type of chart ('bar' or 'line')
+        chart_data_generator: Function to generate chart data
+        px_chart_function: Plotly Express chart function (px.bar or px.line)
+    """
+    import streamlit as st
+
+    rows, cols = (len(chart_suggestions) + 2) // 3, 3
+
+    for row in range(rows):
+        columns = st.columns(cols)
+        for col_idx, col in enumerate(columns):
+            chart_index = row * cols + col_idx
+            if chart_index < len(chart_suggestions):
+                chart_config = chart_suggestions[chart_index]
+                with col:
+                    try:
+                        st.write(f"### {chart_config['title']}")
+                        st.plotly_chart(
+                            px_chart_function(**chart_data_generator(df, chart_config))
+                        )
+                    except Exception as e:
+                        st.write(
+                            f"Error: {e} occurred while rendering the chart. Please try another chart suggestion."
+                        )

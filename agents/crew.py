@@ -54,6 +54,15 @@ class LineChartSpec(BaseModel):
     x_time_trunc: Optional[TimeTruncEnum] = None
 
 
+class HistogramSpec(BaseModel):
+    title: str
+    x: str
+    bins: int
+    x_label: Optional[str] = None
+    y_label: Optional[str] = None
+    y_agg: Optional[YAggEnum] = None
+
+
 @CrewBase
 class AnalystCrew:
     def __init__(self, llm_id) -> None:
@@ -84,6 +93,12 @@ class AnalystCrew:
     def line_chart_suggestion_task(self) -> Task:
         return Task(
             config=self.tasks_config["line_chart_suggestion"], output_json=LineChartSpec
+        )
+
+    @task
+    def histogram_suggestion_task(self) -> Task:
+        return Task(
+            config=self.tasks_config["histogram_suggestion"], output_json=HistogramSpec
         )
 
     @crew

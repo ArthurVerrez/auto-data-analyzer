@@ -28,3 +28,6 @@ line_chart_config = {
 }
 
 st.plotly_chart(px.line(**line_chart_data_generator(df, line_chart_config)))
+
+
+# st.plotly_chart(px.histogram(**histogram_data_generator(df, histogram_config)))
