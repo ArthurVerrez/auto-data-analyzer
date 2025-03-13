@@ -64,12 +64,6 @@ def response() -> None:
     with st.expander("See the raw data", expanded=False):
         st.dataframe(df, use_container_width=True)
 
-    with st.expander("Column Summaries", expanded=False):
-        st.write(col_stats)
-
-    with st.expander("Example rows", expanded=False):
-        st.write(example_rows.to_csv(index=False))
-
     data_description_prompt = f"""
 The user has uploaded the file {st.session_state.uploaded_file.name} and described it as follows:
 ```
