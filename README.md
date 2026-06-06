@@ -15,8 +15,8 @@ You can access a live version of the app [here](https://the-auto-data-analyzer.s
 ### Clone the repository and create a virtual environment
 
 ```bash
-git clone https://github.com/ArthurVerrez/crewai-streamlit-hackernews-demo
-cd crewai-streamlit-hackernews-demo
+git clone https://github.com/ArthurVerrez/auto-data-analyzer
+cd auto-data-analyzer
 python -m venv env
 ```
 

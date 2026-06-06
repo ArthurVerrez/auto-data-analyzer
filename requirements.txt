@@ -1,9 +1,9 @@
-crewai==0.102.0
-crewai-tools==0.36.0
-streamlit==1.42.2
-python-dotenv==1.0.1
+crewai==1.14.6
+crewai-tools==1.14.6
+streamlit==1.58.0
+python-dotenv==1.2.2
 pandas==2.2.3
 numpy==2.2.3
 orjson==3.10.15
 plotly==6.0.0
-pysqlite3-binary ~= 0.5.2
+pysqlite3-binary ~= 0.5.2 ; sys_platform == "linux"
